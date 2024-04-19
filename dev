@@ -1,0 +1,22 @@
+import socket
+
+FORMAT = "utf-8"
+
+PORT = 2000
+
+SERVER = "rick"
+
+ADDR = (SERVER, PORT)
+
+# Create a socket
+client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+
+client.connect(ADDR)
+
+def send(msg):
+    message = msg.encode(FORMAT)
+    client.send(message)
+    recv_msg = client.recv(1024)
+    print(recv_msg)
+
+send("whole_shrimp")

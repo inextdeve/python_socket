@@ -2,10 +2,12 @@ import socket
 import threading
 
 HEADER = 64
-PORT = 5051
+PORT = 5050
 
 # gethostbyname() get the ip address of the host by it's name
-SERVER = socket.gethostbyname(socket.gethostname())
+# SERVER = socket.gethostbyname(socket.gethostname())
+SERVER = "10.0.2.15"
+
 ADDR = (SERVER, PORT)
 FORMAT = "utf-8"
 DISCONNECT_MESSAGE = "!DISCONNECT"
