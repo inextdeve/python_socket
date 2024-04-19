@@ -1,5 +1,4 @@
 import socket
-import threading
 
 FORMAT = "utf-8"
 PORT = 2000
@@ -42,31 +41,30 @@ def Chambre_2(id):
 
    client_socket.connect(("rick", 3006))
 
-   # received_data = b''
-   # while True:
-   #    data_chunk = client_socket.recv(3000)  # Adjust buffer size as needed
-   #    if not data_chunk:
-   #          break  # No more data available
-   #    received_data += data_chunk
-   # try:
-   #    # Read data from the socket
-   #    received_data = b''
-   #    while True:
-   #       data_chunk = client_socket.recv(1024)  # Adjust buffer size as needed
-   #       if not data_chunk:
-   #             break  # No more data available
-   #       received_data += data_chunk
+   try:
+      # Read data from the socket
+      received_data = b''
+      while True:
+         data_chunk = client_socket.recv(1024)  # Adjust buffer size as needed
+         print("Chunk len", len(data_chunk))
+         if len(data_chunk) == 96:
+            print(data_chunk.decode("utf-8"))
+         if not data_chunk:
+               break  # No more data available
+         received_data += data_chunk
 
-   #    # Decode the received bytes using the correct encoding
-   #    decoded_data = received_data.decode('utf-8')
+      # Decode the received bytes using the correct encoding
+      decoded_data = received_data.decode('utf-8')
 
-   #    # Send the response
-   #    response = parseLoveChar(id, decoded_data)
-   #    print("Response:", response)
-   #    client_socket.send(bytes(response, FORMAT))
-   # finally:
-   #    # Close the socket
-   #    client_socket.close()
+      print(decoded_data)
+
+      # Send the response
+      response = parseLoveChar(id, decoded_data)
+      print("Response:", response)
+      client_socket.send(bytes(response, FORMAT))
+   finally:
+      # Close the socket
+      client_socket.close()
 
 
 def Chambre_1(id):
@@ -87,21 +85,19 @@ def Chambre_1(id):
 
       print(f"Received message from {address}: {recv_message}")
 
-      if recv_message.find("identifier") > -1:
-         # print("ID FOUND:", recv_message)
-         server_socket.sendto(bytes(ID.upper(), FORMAT), address)
-         # Chambre_2(extractId(recv_message))
-         
-         
-         
       if recv_message.find("upper-code") > -1:
          server_socket.sendto(bytes(ID.upper(), FORMAT), address)
+      
+      if recv_message.find("identifier") > -1:
+         print("ID FOUND:", recv_message)
+         Chambre_2(extractId(recv_message))
+
 
       
 
       
 
-# Create a socket
+# Create starting socket
 client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
 client.connect(ADDR)
