@@ -4,6 +4,8 @@ import sys
 import struct
 import array
 import base64
+import threading
+import re
 
 FORMAT = "utf-8"
 PORT = 2000
@@ -103,21 +105,10 @@ def wyp_parse(packet):
    decoded_msg = base64.b64decode(message).decode()
    return decoded_msg
 
-def Chambre_6(id):
-   WEB_PORT = 5080
+def http_get_server():
+   WEB_PORT = 7702
    SERVER = socket.gethostbyname(socket.gethostname())
-   ADDR = (SERVER, PORT)
-   
-   client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-   client_socket.connect(("rick", 8003))
-   client_socket.send(bytes(f"{id} {WEB_PORT}", FORMAT))
-   client_socket.detach()
-
-   # while True:
-   #    data_chunk = client_socket.recv(4096)
-   #    print(data_chunk.decode(FORMAT))
-   #    if not data_chunk:
-   #       break
+   ADDR = (SERVER, WEB_PORT)
 
    web_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
    web_socket.bind(ADDR)
@@ -130,7 +121,7 @@ def Chambre_6(id):
       print(f"Connection from {client_address}")
 
       # Receive data from the client
-      request = client_connection.recv(1024).decode()
+      request = client_connection.recv(1024).decode(FORMAT)
       print("Received request:")
       print(request)
 
@@ -141,9 +132,52 @@ def Chambre_6(id):
          print(f"Method: {method}")
          print(f"Path: {path}")
 
+         requested_rfc = re.search(r'/rfc(\d+)\.txt', request)
+         if requested_rfc:
+            rfc_number = requested_rfc.group(1)
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as web_client:
+               web_client.connect(('web', 81))
+               
+               # print("HELLO", f"GET /rfc/rfc{rfc_number}.txt HTTP/1.1\r\nHost: web\r\n\r\n".encode())
+               web_client.sendall(f"GET /rfc/rfc{rfc_number}.txt HTTP/1.1\r\nHost: web\r\n\r\n".encode())
+               response = b""
+               web_client.settimeout(1)
+               while True:
+                  try:
+                     chunk = web_client.recv(4096)
+                     if not chunk:
+                        break
+                     response += chunk
+                  except socket.timeout:
+                        break
+               
+               try:
+                  client_connection.sendall(response)
+               except:
+                  print("Disconnected client")
+         
+
 
       # Close the connection
       client_connection.close()
+
+def Chambre_6(id):
+   WEB_PORT = 7702
+
+   thread = threading.Thread(target=http_get_server)
+   thread.start()
+   
+   client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+   client_socket.connect(("rick", 8003))
+   client_socket.send(bytes(f"{id} {WEB_PORT}", FORMAT))
+
+   while True:
+      data_chunk = client_socket.recv(4096)
+      print(data_chunk.decode(FORMAT))
+      if not data_chunk:
+         break
+
+   
 
 
 
