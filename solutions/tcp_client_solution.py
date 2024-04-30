@@ -103,6 +103,52 @@ def wyp_parse(packet):
    decoded_msg = base64.b64decode(message).decode()
    return decoded_msg
 
+def Chambre_6(id):
+   WEB_PORT = 5080
+   SERVER = socket.gethostbyname(socket.gethostname())
+   ADDR = (SERVER, PORT)
+   
+   client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+   client_socket.connect(("rick", 8003))
+   client_socket.send(bytes(f"{id} {WEB_PORT}", FORMAT))
+   client_socket.detach()
+
+   # while True:
+   #    data_chunk = client_socket.recv(4096)
+   #    print(data_chunk.decode(FORMAT))
+   #    if not data_chunk:
+   #       break
+
+   web_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+   web_socket.bind(ADDR)
+   web_socket.listen(1)
+
+   while True:
+      print("GET SERVER:")
+      # Accept incoming connection
+      client_connection, client_address = web_socket.accept()
+      print(f"Connection from {client_address}")
+
+      # Receive data from the client
+      request = client_connection.recv(1024).decode()
+      print("Received request:")
+      print(request)
+
+      # Parse the request (for demonstration purposes)
+      request_lines = request.split('\r\n')
+      if len(request_lines) > 0:
+         method, path, _ = request_lines[0].split(' ')
+         print(f"Method: {method}")
+         print(f"Path: {path}")
+
+
+      # Close the connection
+      client_connection.close()
+
+
+
+
+
 def Chambre_5(id):
 
    client_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -111,16 +157,11 @@ def Chambre_5(id):
    client_socket.send(wyp_packet(id))
 
    while True:
-      print("A")
       data_chunk = client_socket.recv(4096)
       print(wyp_parse(data_chunk))
-      print(data_chunk)
-      if not data_chunk:
-         break
-   while True:
-      print("Chambre 5 Second loop")
-      data_chunk = client_socket.recv(4096)
-      print(wyp_parse(data_chunk))
+      id = extractId(wyp_parse(data_chunk))
+      if(id):
+         Chambre_6(id)
       if not data_chunk:
          break
 
