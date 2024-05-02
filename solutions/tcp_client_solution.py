@@ -6,6 +6,7 @@ import array
 import base64
 import threading
 import re
+from urllib.parse import urlparse
 
 FORMAT = "utf-8"
 PORT = 2000
@@ -106,7 +107,7 @@ def wyp_parse(packet):
    return decoded_msg
 
 def http_get_server():
-   WEB_PORT = 7702
+   WEB_PORT = 8787
    SERVER = socket.gethostbyname(socket.gethostname())
    ADDR = (SERVER, WEB_PORT)
 
@@ -121,9 +122,13 @@ def http_get_server():
       print(f"Connection from {client_address}")
 
       # Receive data from the client
-      request = client_connection.recv(1024).decode(FORMAT)
+      request = client_connection.recv(4096).decode(FORMAT)
       print("Received request:")
       print(request)
+
+      id = extractId(request)
+      if(id):
+         Chambre_7(id[:id.find("%0")])
 
       # Parse the request (for demonstration purposes)
       request_lines = request.split('\r\n')
@@ -139,30 +144,53 @@ def http_get_server():
                web_client.connect(('web', 81))
                
                # print("HELLO", f"GET /rfc/rfc{rfc_number}.txt HTTP/1.1\r\nHost: web\r\n\r\n".encode())
+
                web_client.sendall(f"GET /rfc/rfc{rfc_number}.txt HTTP/1.1\r\nHost: web\r\n\r\n".encode())
+
                response = b""
-               web_client.settimeout(1)
+               content_length = 0
                while True:
-                  try:
-                     chunk = web_client.recv(4096)
-                     if not chunk:
-                        break
-                     response += chunk
-                  except socket.timeout:
-                        break
-               
-               try:
-                  client_connection.sendall(response)
-               except:
-                  print("Disconnected client")
+                  data_chunk = web_client.recv(4096)
+
+                  
+
+                  if content_length == 0:
+                     # Find the position of the empty line that separates header from body
+                     header_end = data_chunk.decode(FORMAT).find("\r\n\r\n")
+                     header_length = 0
+                     if header_end != -1:
+                        # Calculate header length
+                        header_length = header_end + len("\r\n\r\n")
+
+                     request_lines = data_chunk.decode(FORMAT).split('\r\n')
+                     for line in request_lines:
+                        if line.startswith("Content-Length:"):
+                              content_length = int(line.split(":")[1].strip())
+                              break
+                  response += data_chunk
+                  if len(response) == content_length + header_length:
+                     break
+               client_connection.sendall(response)
          
 
 
       # Close the connection
       client_connection.close()
 
+def Chambre_7(id):
+   print("Chambre 7 Id", id)
+   client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+   client_socket.connect(("rick", 33333))
+   client_socket.send(bytes(id, FORMAT))
+
+   while True:
+      data_chunk = client_socket.recv(4096)
+      print(data_chunk.decode(FORMAT))
+      if not data_chunk:
+         break
+
 def Chambre_6(id):
-   WEB_PORT = 7702
+   WEB_PORT = 8787
 
    thread = threading.Thread(target=http_get_server)
    thread.start()
